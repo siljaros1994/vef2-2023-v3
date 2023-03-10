@@ -1,22 +1,48 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { sayHello } from '../lib/hello.js';
+import { query } from '../lib/db.js';
+import {
+  mapDbEventsToEvents,
+  eventMapper,
+  mapDbEventToEvent,
+} from '../lib/events.js';
 
 export const router = express.Router();
 
-export async function hello(req: Request, res: Response, next: NextFunction) {
-  res.json({ hello: sayHello('world') });
-  next();
+export async function index(req: Request, res: Response, next: NextFunction) {
+  const eventsResult = await query('SELECT * FROM events;');
+
+  const events = mapDbEventsToEvents(eventsResult);
+
+  res.json(events);
 }
 
-export async function bye() {
-  console.log('done');
+export async function event(req: Request, res: Response, next: NextFunction) {
+  const { slug } = req.params;
+  const eventsResult = await query('SELECT * FROM events WHERE slug = $1;', [
+    slug,
+  ]);
+
+  const event = mapDbEventToEvent(eventsResult);
+
+  if (!event) {
+    return next();
+  }
+
+  res.json(event);
 }
 
-export async function error() {
-  throw new Error('error');
+async function patchEvent() {}
+
+async function createEvent(req: Request, res: Response, next: NextFunction) {
+  const { title, slug, description } = req.body;
+
+  res.json({ title, slug, description });
 }
 
-router.get('/test', hello, bye);
+async function deleteEvent() {}
 
-// Mun crasha öllu
-router.get('/error', error);
+router.get('/', index);
+router.get('/:slug', event);
+router.patch('/:slug', patchEvent);
+router.post('/', createEvent);
+router.delete('/:slug', deleteEvent);
