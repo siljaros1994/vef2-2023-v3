@@ -20,19 +20,12 @@ function notFoundHandler(req: Request, res: Response, next: NextFunction) {
   res.status(404).json({ error: 'Not found' });
 }
 
-function errorHandler(
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+function errorHandler(err: Error, req: Request, res: Response, next: NextFunction,) {
   console.error(err);
 
-  /*
-  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+  if (err instanceof SyntaxError && (err as any).status === 400 && 'body' in err) {
     return res.status(400).json({ error: 'Invalid json' });
   }
-  */
 
   return res.status(500).json({ error: 'Internal server error' });
 }
