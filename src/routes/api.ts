@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
-import { createDepartment, deleteDepartment, getDepartment, listDepartments, updateDepartment } from "./departments.js";
-import { listCourses, createCourse, getCourse, updateCourse, deleteCourse } from "./courses.js";
+import { createDepartment, deleteDepartment, getDepartment, listDepartments, updateDepartment } from "../lib/departments.js";
+import { listCourses, createCourse, getCourse, updateCourse, deleteCourse } from "../lib/courses.js";
 import { Department, Course } from "./types.js";
 
 export const router = express.Router();
