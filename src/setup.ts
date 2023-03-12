@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
-import { insertCourse, insertDepartment, poolEnd, query} from '../lib/db.js';
+import { insertCourse, insertDepartment, poolEnd, query} from './lib/db.js'
 import { Department } from './types.js';
 import { parseCsv, parseJson } from './parse.js';
 
