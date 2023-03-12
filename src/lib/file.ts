@@ -1,6 +1,6 @@
 import slugify from 'slugify';
-import { valueToSementer } from '../lib/mappers.ts';
-import type { Course, DepartmentImport } from '../types.ts';
+import { valueToSementer } from '../lib/mappers.js';
+import type { Course, DepartmentImport } from '../types.js';
 
 /**
  * Parse JSON data representing index files.
