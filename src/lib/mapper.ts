@@ -1,4 +1,4 @@
-import { Department, Course } from './types.ts';
+import { Department, Course } from './types.js';
 
 export function departmentMapper(input: any): Department {
   return {
