@@ -2,7 +2,7 @@ import { readFile } from 'fs/promises';
 import dotenv from 'dotenv';
 import pg from 'pg';
 import { departmentMapper, courseMapper} from './mapper.js';
-import { Department } from './types.s';
+import { Department, Course} from './types.js';
 
 
 dotenv.config({ path: './.env.test' });
@@ -27,16 +27,13 @@ pool.on('error', (err: Error) => {
   process.exit(-1);
 });
 
-export async function query(
-  q: string,
-  values: (string | number | null)[] = []
-): Promise<pg.QueryResult<unknown>> {
+export async function query(q: string, values: (string | number | null)[] = []): Promise<pg.QueryResult<unknown>> {
   let client: pg.PoolClient;
   try {
     client = await pool.connect();
   } catch (e) {
     console.error('unable to get client from pool', e);
-    return null;
+    throw new Error('Unable to get client from pool');
   }
 
   try {
@@ -45,7 +42,7 @@ export async function query(
   } catch (e) {
     console.error('unable to query', e);
     console.info(q, values);
-    return null;
+    throw new Error('Unable to execute query');
   } finally {
     client.release();
   }
@@ -90,10 +87,10 @@ export async function getDepartments(): Promise<Department[]> {
   const result = await query('SELECT * FROM department');
 
   if(!result) {
-    return null;
+    return [];
   }
 
-  const departments = departmentsMapper(result.rows).map((d) => {
+  const departments = departmentMapper(result.rows).map((d: Department) => {
     delete d.courses;
     return d;
   });
@@ -108,7 +105,7 @@ export async function getDepartmentBySlug(
     slug,
   ]);
 
-  if (!result) {
+  if (!result || result.rowCount === 0) {
     return null;
   }
 
@@ -120,12 +117,90 @@ export async function getDepartmentBySlug(
 export async function deleteDepartmentBySlug(slug: string): Promise<boolean> {
   const result = await query('DELETE FROM department WHERE slug =$1', [slug]);
 
-  if (result.rowCount === 0) {
+  if (!result) {
     return false;
   }
 
-  return true;
+  return result.rowCount > 0;
 }
+
+export async function getCourseByTitle(title: string) {
+  const result = await query('SELECT * FROM course WHERE title = $1', [title]);
+
+  if (!result || result.rowCount === 0) {
+    return null;
+  }
+
+  const course = courseMapper(result.rows[0]);
+
+  return course;
+}
+
+export async function createDepartment(department: Omit<Department, 'id' | 'courses'>): Promise<Department> {
+  const q = 'INSERT INTO department (name, slug, description) VALUES ($1, $2, $3) RETURNING *';
+  const values = [department.name, department.slug, department.description];
+  
+  const result = await query(q, values);
+  
+  if (!result || result.rows.length === 0) {
+    return null;
+  }
+  
+  const createdDepartment = departmentMapper(result.rows[0]);
+  return createdDepartment;
+}
+
+export async function updateDepartment(department: Department): Promise<Department> {
+  const { id, ...fields } = department;
+    
+  const result = await conditionalUpdate('department', id, Object.keys(fields), Object.values(fields));
+    
+  if (!result || result.rowCount === 0) {
+    return null;
+  }
+    
+  const updatedDepartment = departmentMapper(result.rows[0]);
+  return updatedDepartment;
+}
+
+export async function getCourses(): Promise<Course[] | null> {
+  try {
+    const result = await query('SELECT * FROM course');
+
+    if (!result) {
+      throw new Error('Unable to fetch courses');
+    }
+
+    const courses = courseMapper(result.rows);
+
+    return courses;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function getCourseBySlug(slug: string): Promise<Course | null> {
+  const result = await query('SELECT * FROM course WHERE slug = $1', [slug]);
+  
+  if (!result || result.rowCount === 0) {
+  return null;
+  }
+  
+  const course = courseMapper(result.rows[0]);
+  
+  return course;
+}
+
+export async function deleteCourseBySlug(slug: string): Promise<boolean> {
+  const result = await query('DELETE FROM course WHERE slug = $1', [slug]);
+  
+  if (!result) {
+  return false;
+  }
+  
+  return result.rowCount > 0;
+} 
 
 export async function createSchema(schemaFile = SCHEMA_FILE) {
   const data = await readFile(schemaFile);
