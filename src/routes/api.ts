@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
-import { createDepartment, deleteDepartment, getDepartment, listDepartments, updateDepartment } from "../lib/departments.js";
-import { listCourses, createCourse, getCourse, updateCourse, deleteCourse } from "../lib/courses.js";
-import { Department, Course } from "./types.js";
+import { createDepartment, deleteDepartment, getDepartment, listDepartments, updateDepartment } from "../lib/departments.ts";
+import { listCourses, createCourse, getCourse, updateCourse, deleteCourse } from "../lib/courses.ts";
+import { Department, Course } from "../src/types.ts";
 
 export const router = express.Router();
 
@@ -49,6 +49,15 @@ router.post("/departments", async (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     return res.status(500).send("Internal Server Error");
+  }
+});
+
+router.get('/departments/:slug/courses', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const courses = await listCourses(req, res, next);
+    return res.json(courses);
+  } catch (err) {
+    next(err);
   }
 });
 
