@@ -31,14 +31,14 @@ export function departmentMapper(input: unknown): Department | null {
   return department;
 }
   
-export function departmentsMapper(input: QueryResult<any> | null): Department[] {
+export function departmentsMapper( input: QueryResult<any> | null ): Array<Department> {
   if (!input) {
     return [];
   }
   return input.rows.map((row) => departmentMapper(row)).filter((department): department is Department => department !== null);
   }
-  
-export function courseMapper(input: unknown): Course | null {
+   
+export function courseMapper(input: unknown): Course | null{
   const potentialCourse = input as Partial<Course> | null;
 
   if (!potentialCourse) {
