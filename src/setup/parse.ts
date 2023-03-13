@@ -1,5 +1,5 @@
 import slugify from 'slugify';
-import { valueToSementer } from '../lib/mappers.js';
+import { valueToSemester } from '../lib/mapper.js';
 import type { Course, DepartmentImport } from '../types.js';
 
 /**
@@ -47,7 +47,6 @@ function parseLine(line: string): Omit<Course, 'id'> | null {
     lineLevel = undefined,
     lineUrl = undefined,
   ] = line.split(';');
-
   const formattedUnits = (lineUnits ?? '').replace(/\./g, '').replace(',', '.');
   const parsedUnits = Number.parseFloat(formattedUnits);
   const units =
@@ -56,20 +55,15 @@ function parseLine(line: string): Omit<Course, 'id'> | null {
     formattedUnits === parsedUnits.toString()
       ? parsedUnits
       : undefined;
-
-  const semester = valueToSementer(lineSemester);
-
+  const semester = lineSemester !== undefined ? valueToSemester(lineSemester) : undefined;
   const level =
     typeof lineLevel === 'string' && lineLevel.length ? lineLevel : undefined;
-
   let url;
-
   try {
     url = new URL(lineUrl ?? '').href;
   } catch (e) {
     // do nothing if URL is invalid
   }
-
   if (!id || !title || !semester) {
     /*
     console.warn(`missing required properties`, {
@@ -80,7 +74,6 @@ function parseLine(line: string): Omit<Course, 'id'> | null {
     */
     return null;
   }
-
   return {
     course_id: id,
     title,
