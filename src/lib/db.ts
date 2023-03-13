@@ -27,7 +27,7 @@ pool.on('error', (err: Error) => {
   process.exit(-1);
 });
 
-export async function query(q: string, values: (string | number | null)[] = []): Promise<pg.QueryResult<any>> {
+export async function query(q: string, values: (string | number | null)[] = [], silent = false): Promise<pg.QueryResult<any>> {
   let client: pg.PoolClient;
   try {
     client = await pool.connect();
@@ -40,8 +40,8 @@ export async function query(q: string, values: (string | number | null)[] = []):
     const result = await client.query(q, values);
     return result;
   } catch (e) {
-    console.error('unable to query', e);
-    console.info(q, values);
+    if (!silent) console.error('unable to query', e);
+    if (!silent) console.info(q, values);
     throw new Error('Unable to execute query');
   } finally {
     client.release();
@@ -203,33 +203,41 @@ export async function getCourseBySlug(slug: string): Promise<Course | null> {
   return course;
 }
 
-export async function insertDepartment(department: Omit<Department, 'id'>): Promise<Department | null> {
-  const q = 'INSERT INTO department (name, slug, description) VALUES ($1, $2, $3) RETURNING *';
-  const values = [department.name, department.slug, department.description];
+export async function insertDepartment(
+  department: Omit<Department, 'id'>,
+  silent = false,
+  ): Promise<Department | null> {
+    const { title, slug, description } = department;
+    const result = await query(
+      'INSERT INTO department (title, slug, description) VALUES ($1, $2, $3) RETURNING id, title, slug, description, created, updated', 
+      [title, slug, description],
+      silent,
+    );
 
-  const result = await query(q, values);
+    const mapped = departmentMapper(result?.rows[0]);
 
-  if (!result || result.rows.length === 0) {
-    return null;
+    return mapped;
   }
 
-  const createdDepartment = departmentMapper(result.rows[0]);
-  return createdDepartment;
-}
-
-export async function insertCourse(course: Omit<Course, 'id'>): Promise<Course | null> {
-  const q = 'INSERT INTO course (title, slug, ects, description, department_id) VALUES ($1, $2, $3, $4, $5) RETURNING *';
-  const values = [course.title, course.slug, course.ects, course.description, course.department_id];
-
-  const result = await query(q, values);
-
-  if (!result || result.rows.length === 0) {
-    return null;
+  export async function insertCourseToDb(course: Omit<Course, "id">,departmentId: number,silent = false): Promise<Course | null> {
+    const { title, units, semester, level, url, course_id } = course;
+    const result = await query(
+      "INSERT INTO courses (title, units, semester, level, url, department_id, course_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [
+        title,
+        units || 0,
+        semester,
+        level || "",
+        url || "",
+        departmentId,
+        course_id,
+      ],
+      silent
+    );
+    const mapped = await courseMapper(result?.rows[0]);
+  
+    return mapped;
   }
-
-  const createdCourse = courseMapper(result.rows[0]);
-  return createdCourse;
-}
 
 export async function deleteCourseBySlug(slug: string): Promise<boolean> {
   const result = await query('DELETE FROM course WHERE slug = $1', [slug]);
