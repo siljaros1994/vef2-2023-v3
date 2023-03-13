@@ -2,9 +2,9 @@ import dotenv from 'dotenv';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
-import { insertCourse, insertDepartment, poolEnd, query} from '../lib/db'
+import { insertCourseToDb, insertDepartment, poolEnd, query} from '../lib/db.js'
 import { Department } from '../types';
-import { parseCsv, parseJson } from './parse';
+import { parseCsv, parseJson } from './parse.js';
 
 dotenv.config();
 
@@ -57,7 +57,6 @@ async function setup() {
             title: item.title,
             slug: item.slug,
             description: item.description,
-            courses: [],
             created: new Date(),
             updated: new Date(),
         };
@@ -73,7 +72,7 @@ async function setup() {
     let invalidInsets = 0;
 
     for (const course of courses) {
-        const id = await insertCourse(course, insertedDept.id, true);
+        const id = await insertCourseToDb(course, insertedDept.id, true);
         if (id) {
             validInserts++;
         } else {
