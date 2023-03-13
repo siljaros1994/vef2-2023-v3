@@ -1,8 +1,8 @@
 import { readFile } from 'fs/promises';
 import dotenv from 'dotenv';
 import pg from 'pg';
-import { departmentMapper, courseMapper} from './mapper.js';
-import { Department, Course} from './types.js';
+import { departmentMapper, courseMapper} from './mapper.ts';
+import { Department, Course} from './types.ts';
 
 
 dotenv.config({ path: './.env.test' });
@@ -27,7 +27,7 @@ pool.on('error', (err: Error) => {
   process.exit(-1);
 });
 
-export async function query(q: string, values: (string | number | null)[] = []): Promise<pg.QueryResult<unknown>> {
+export async function query(q: string, values: (string | number | null)[] = []): Promise<pg.QueryResult<any>> {
   let client: pg.PoolClient;
   try {
     client = await pool.connect();
