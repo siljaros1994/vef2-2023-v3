@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { DepartmentsDAO } from '../src/departments.ts';
+import { DepartmentsDAO } from '../src/departments';
 
 describe('DepartmentsDAO', () => {
   let dao: DepartmentsDAO;
