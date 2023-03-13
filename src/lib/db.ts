@@ -1,8 +1,8 @@
 import { readFile } from 'fs/promises';
 import dotenv from 'dotenv';
 import pg from 'pg';
-import { departmentMapper, courseMapper} from './mapper.ts';
-import { Department, Course} from './types.ts';
+import { departmentMapper, courseMapper} from './mapper';
+import { Department, Course} from '../types';
 
 
 dotenv.config({ path: './.env.test' });
@@ -83,20 +83,20 @@ export async function conditionalUpdate(
   return result;
 }
 
-export async function getDepartments(): Promise<Department[]> {
+export async function getDepartments(): Promise<(Department & { courses?: never })[]> {
   const result = await query('SELECT * FROM department');
 
   if(!result) {
     return [];
   }
 
-  const departments = departmentMapper(result.rows).map((d: Department) => {
-    delete d.courses;
-    return d;
-  });
+  const departments = result.rows.map((row: any) => departmentMapper(row))
+    .filter((department: Department | null): department is Department => department !== null)
+    .map((department: Department) => ({ ...department, courses: undefined }));
 
   return departments;
 }
+
 
 export async function getDepartmentBySlug(
   slug: string,
@@ -136,29 +136,40 @@ export async function getCourseByTitle(title: string) {
   return course;
 }
 
-export async function createDepartment(department: Omit<Department, 'id' | 'courses'>): Promise<Department> {
+export async function createDepartment(department: Omit<Department, 'id' | 'courses'> & { name: string, title?: string, created?: Date, updated?: Date }): Promise<Department | null> {
   const q = 'INSERT INTO department (name, slug, description) VALUES ($1, $2, $3) RETURNING *';
   const values = [department.name, department.slug, department.description];
   
   const result = await query(q, values);
   
   if (!result || result.rows.length === 0) {
-    return null;
+    throw new Error('Failed to create department');
   }
   
   const createdDepartment = departmentMapper(result.rows[0]);
-  return createdDepartment;
+  return createdDepartment ?? null;
 }
 
-export async function updateDepartment(department: Department): Promise<Department> {
+async function createAndLogDepartment() {
+  const createdDepartment = await createDepartment({ name: 'Test Department', slug: 'test-department', description: 'A test department'});
+  console.log(createdDepartment);
+}
+createAndLogDepartment();
+
+
+export async function updateDepartment(department: Department): Promise<Department | null> {
   const { id, ...fields } = department;
     
-  const result = await conditionalUpdate('department', id, Object.keys(fields), Object.values(fields));
-    
+  const values = Object.values(fields).map((value) => {
+    return value instanceof Date ? value.toISOString() : value;
+  });
+  
+  const result = await conditionalUpdate('department', id, Object.keys(fields), values);
+  
   if (!result || result.rowCount === 0) {
     return null;
   }
-    
+  
   const updatedDepartment = departmentMapper(result.rows[0]);
   return updatedDepartment;
 }
@@ -192,6 +203,34 @@ export async function getCourseBySlug(slug: string): Promise<Course | null> {
   return course;
 }
 
+export async function insertDepartment(department: Omit<Department, 'id'>): Promise<Department | null> {
+  const q = 'INSERT INTO department (name, slug, description) VALUES ($1, $2, $3) RETURNING *';
+  const values = [department.name, department.slug, department.description];
+
+  const result = await query(q, values);
+
+  if (!result || result.rows.length === 0) {
+    return null;
+  }
+
+  const createdDepartment = departmentMapper(result.rows[0]);
+  return createdDepartment;
+}
+
+export async function insertCourse(course: Omit<Course, 'id'>): Promise<Course | null> {
+  const q = 'INSERT INTO course (title, slug, ects, description, department_id) VALUES ($1, $2, $3, $4, $5) RETURNING *';
+  const values = [course.title, course.slug, course.ects, course.description, course.department_id];
+
+  const result = await query(q, values);
+
+  if (!result || result.rows.length === 0) {
+    return null;
+  }
+
+  const createdCourse = courseMapper(result.rows[0]);
+  return createdCourse;
+}
+
 export async function deleteCourseBySlug(slug: string): Promise<boolean> {
   const result = await query('DELETE FROM course WHERE slug = $1', [slug]);
   
@@ -212,4 +251,8 @@ export async function dropSchema(dropFile = DROP_SCHEMA_FILE) {
   const data = await readFile(dropFile);
 
   return query(data.toString('utf-8'));
+}
+
+export async function poolEnd() {
+  await pool.end();
 }
