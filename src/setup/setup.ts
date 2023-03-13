@@ -2,9 +2,9 @@ import dotenv from 'dotenv';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
-import { insertCourse, insertDepartment, poolEnd, query} from '../lib/db.js'
-import { Department } from '../types.js';
-import { parseCsv, parseJson } from './parse.js';
+import { insertCourse, insertDepartment, poolEnd, query} from '../lib/db'
+import { Department } from '../types';
+import { parseCsv, parseJson } from './parse';
 
 dotenv.config();
 
@@ -12,13 +12,13 @@ const SCHEMA_FILE = './sql/schema.sql';
 const DROP_SCHEMA_FILE = './sql/drop.sql';
 const DATA_DIR = './data';
 
-export async functio createSchema(schemaFile = SCHEMA_FILE) {
+export async function createSchema(schemaFile = SCHEMA_FILE) {
     const data = await readFile(schemaFile);
 
     return query(data.toString('utf-8'));
 }
 
-export async functio dropSchema(dropFile = DROP_SCHEMA_FILE) {
+export async function dropSchema(dropFile = DROP_SCHEMA_FILE) {
     const data = await readFile(dropFile);
 
     return query(data.toString('utf-8'));
@@ -44,18 +44,19 @@ async function setup() {
         return process.exit(-1);
     }
 
-    const indexFile = await readFile(join(DATA_DIR, item.csv), {
-        encoding: 'latin1',
-    });
-    // console.info('parsing', item.csv);
-    const courses = parseCsv(csvFile);
+    const indexFile = await readFile(join(DATA_DIR, "index.json"));
+    const indexData = parseJson(indexFile.toString("utf-8"));
 
-    const department: Omit<Department, 'id'> = {
-        title: item.title,
-        slug: item.slug,
-        description: item.description,
-        courses: [],
-    };
+    for (const item of indexData) {
+        const csvFile = await readFile(join(DATA_DIR, item.csv), { encoding: 'latin1' });
+        const courses = parseCsv(csvFile);
+        const department: Omit<Department, 'id'> = {
+            title: item.title,
+            slug: item.slug,
+            description: item.description,
+            created: new Date(),
+            updated: new Date(),
+        };
 
     const insertDept = await insertDepartment(department,false);
 
@@ -81,3 +82,11 @@ async function setup() {
         courses and ${invalidInsets} invalid courses.`,
     );
 }
+await poolEnd();
+}
+
+setup().catch((err) => {
+    console.log(err);
+    console.error('error running setup');
+    poolEnd();
+});
