@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
-import { createDepartment, deleteDepartment, getDepartment, listDepartments, updateDepartment } from "../lib/departments.ts";
-import { listCourses, createCourse, getCourse, updateCourse, deleteCourse } from "../lib/courses.ts";
-import { Department, Course } from "../src/types.ts";
+import { createDepartment, deleteDepartment, getDepartment, listDepartments, updateDepartment } from "../lib/departments.js";
+import { listCourses, createCourse, updateCourse, deleteCourse } from "../lib/courses.js";
+import { Department, Course } from "../src/types.js";
 
 export const router = express.Router();
 
