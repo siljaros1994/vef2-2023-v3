@@ -1,8 +1,8 @@
 import { readFile } from 'fs/promises';
 import dotenv from 'dotenv';
 import pg from 'pg';
-import { departmentMapper, courseMapper} from './mapper';
-import { Department, Course} from '../types';
+import { departmentMapper, courseMapper} from './mapper.js';
+import { Department, Course} from '../types.js';
 
 
 dotenv.config({ path: './.env.test' });
@@ -136,27 +136,6 @@ export async function getCourseByTitle(title: string) {
   return course;
 }
 
-export async function createDepartment(department: Omit<Department, 'id' | 'courses'> & { name: string, title?: string, created?: Date, updated?: Date }): Promise<Department | null> {
-  const q = 'INSERT INTO department (name, slug, description) VALUES ($1, $2, $3) RETURNING *';
-  const values = [department.name, department.slug, department.description];
-  
-  const result = await query(q, values);
-  
-  if (!result || result.rows.length === 0) {
-    throw new Error('Failed to create department');
-  }
-  
-  const createdDepartment = departmentMapper(result.rows[0]);
-  return createdDepartment ?? null;
-}
-
-async function createAndLogDepartment() {
-  const createdDepartment = await createDepartment({ name: 'Test Department', slug: 'test-department', description: 'A test department'});
-  console.log(createdDepartment);
-}
-createAndLogDepartment();
-
-
 export async function updateDepartment(department: Department): Promise<Department | null> {
   const { id, ...fields } = department;
     
@@ -174,22 +153,6 @@ export async function updateDepartment(department: Department): Promise<Departme
   return updatedDepartment;
 }
 
-export async function getCourses(): Promise<Course[] | null> {
-  try {
-    const result = await query('SELECT * FROM course');
-
-    if (!result) {
-      throw new Error('Unable to fetch courses');
-    }
-
-    const courses = courseMapper(result.rows);
-
-    return courses;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}
 
 export async function getCourseBySlug(slug: string): Promise<Course | null> {
   const result = await query('SELECT * FROM course WHERE slug = $1', [slug]);
