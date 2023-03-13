@@ -48,19 +48,23 @@ async function setup() {
     const indexData = parseJson(indexFile.toString("utf-8"));
 
     for (const item of indexData) {
-        const csvFile = await readFile(join(DATA_DIR, item.csv), { encoding: 'latin1' });
+        const csvFile = await readFile(join(DATA_DIR, item.csv), {
+             encoding: 'latin1',
+         });
         const courses = parseCsv(csvFile);
+
         const department: Omit<Department, 'id'> = {
             title: item.title,
             slug: item.slug,
             description: item.description,
+            courses: [],
             created: new Date(),
             updated: new Date(),
         };
 
-    const insertDept = await insertDepartment(department,false);
+    const insertedDept = await insertDepartment(department, false);
 
-    if (!insertDept) {
+    if (!insertedDept) {
         console.error('unable to insert department', item);
         continue;
     }
@@ -69,7 +73,7 @@ async function setup() {
     let invalidInsets = 0;
 
     for (const course of courses) {
-        const id = await insertCourse(course, insertDept.is, true);
+        const id = await insertCourse(course, insertedDept.id, true);
         if (id) {
             validInserts++;
         } else {
@@ -77,10 +81,8 @@ async function setup() {
         }
     }
 
-    console.info(
-        `Created department ${item.title} wiith ${validInserts}
-        courses and ${invalidInsets} invalid courses.`,
-    );
+    console.info(`Created department ${item.title} with ${validInserts} courses and ${invalidInsets} invalid courses.`);
+    
 }
 await poolEnd();
 }
