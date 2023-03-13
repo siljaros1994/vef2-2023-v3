@@ -1,5 +1,5 @@
 import { Pool, QueryResult } from 'pg';
-import { Department } from '../types';
+import { Department } from '../types.js';
 
 export class DepartmentsDAO {
   private readonly pool: Pool;
