@@ -1,5 +1,5 @@
 import slugify from 'slugify';
-import { valueToSementer } from '../lib/mappers.js';
+import { valueToSemester } from '../lib/mapper.js';
 import type { Course, DepartmentImport } from '../types.js';
 
 /**
@@ -57,7 +57,7 @@ function parseLine(line: string): Omit<Course, 'id'> | null {
       ? parsedUnits
       : undefined;
 
-  const semester = valueToSementer(lineSemester);
+  const semester = valueToSemester(lineSemester);
 
   const level =
     typeof lineLevel === 'string' && lineLevel.length ? lineLevel : undefined;
