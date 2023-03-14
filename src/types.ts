@@ -35,12 +35,3 @@ export type DepartmentImport = {
   description: string;
   csv: string;
 };
-
-export type QueryResultRow = {
-  [key: string]: any;
-};
-
-export type QueryResult<T extends QueryResultRow = QueryResultRow> = {
-  rowCount: number;
-  rows: T[];
-};
