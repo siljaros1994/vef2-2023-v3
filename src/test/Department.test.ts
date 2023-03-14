@@ -30,6 +30,7 @@ describe('DepartmentsDAO', () => {
 
   it('should create a new department', async () => {
     const newDepartment = {
+      id: 3, // Add id property here
       title: 'Electrical Engineering',
       slug: 'electrical-engineering',
       description: 'The study of electrical systems and technology',
@@ -39,7 +40,7 @@ describe('DepartmentsDAO', () => {
     const createdDepartment = await dao.createDepartment(newDepartment);
     expect(createdDepartment).not.toBeNull();
     expect(createdDepartment?.title).toBe('Electrical Engineering');
-  });
+  });  
 
   it('should update an existing department', async () => {
     const updates = {
