@@ -1,6 +1,8 @@
 import { Pool } from 'pg';
-import { Course, Semester } from '../types';
-import { courseMapper, coursesMapper } from './mapper';
+import { Course, Semester } from '../types.js';
+import { courseMapper, coursesMapper } from './mapper.js';
+import { listCourses, createCourse, updateCourse, deleteCourse } from '../lib/courses.js';
+
 
 export class CoursesDAO {
     private readonly pool: Pool;
@@ -70,18 +72,16 @@ export class CoursesDAO {
       }
     }
 
-    async listCourses(): Promise<Course[]> {
-      const client = await this.pool.connect();
-      try {
-        const result = await client.query('SELECT * FROM courses');
-        const courses = coursesMapper(result);
-        return courses;
-      } finally {
-        client.release();
-      }
-    }
-    
-  
+  async listCourses(): Promise<Course[]> {
+  const client = await this.pool.connect();
+  try {
+    const result = await client.query('SELECT * FROM courses');
+    const courses = coursesMapper(result);
+    return courses;
+  } finally {
+    client.release();
+  }
+}
     async deleteCourse(id: number): Promise<boolean> {
       const client = await this.pool.connect();
       try {
